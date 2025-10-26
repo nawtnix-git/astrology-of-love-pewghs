@@ -1,104 +1,124 @@
-import React from "react";
-import { Stack, Link } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View, Text, Alert, Platform } from "react-native";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
 
-const ICON_COLOR = "#007AFF";
+import React, { useState, useEffect } from 'react';
+import { ScrollView, StyleSheet, View, Text, Pressable, Platform } from 'react-native';
+import { Stack, Link } from 'expo-router';
+import { IconSymbol } from '@/components/IconSymbol';
+import { colors, commonStyles } from '@/styles/commonStyles';
+import { zodiacSigns, horoscopes } from '@/data/zodiacData';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
-  const theme = useTheme();
-  const modalDemos = [
-    {
-      title: "Standard Modal",
-      description: "Full screen modal presentation",
-      route: "/modal",
-      color: "#007AFF",
-    },
-    {
-      title: "Form Sheet",
-      description: "Bottom sheet with detents and grabber",
-      route: "/formsheet",
-      color: "#34C759",
-    },
-    {
-      title: "Transparent Modal",
-      description: "Overlay without obscuring background",
-      route: "/transparent-modal",
-      color: "#FF9500",
+  const [selectedSign, setSelectedSign] = useState<string>('Aries');
+
+  useEffect(() => {
+    loadSavedSign();
+  }, []);
+
+  const loadSavedSign = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('zodiacSign');
+      if (saved) {
+        setSelectedSign(saved);
+      }
+    } catch (error) {
+      console.log('Error loading saved sign:', error);
     }
-  ];
+  };
 
-  const renderModalDemo = ({ item }: { item: (typeof modalDemos)[0] }) => (
-    <GlassView style={[
-      styles.demoCard,
-      Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-    ]} glassEffectStyle="regular">
-      <View style={[styles.demoIcon, { backgroundColor: item.color }]}>
-        <IconSymbol name="square.grid.3x3" color="white" size={24} />
-      </View>
-      <View style={styles.demoContent}>
-        <Text style={[styles.demoTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.demoDescription, { color: theme.dark ? '#98989D' : '#666' }]}>{item.description}</Text>
-      </View>
-      <Link href={item.route as any} asChild>
-        <Pressable>
-          <GlassView style={[
-            styles.tryButton,
-            Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }
-          ]} glassEffectStyle="clear">
-            <Text style={[styles.tryButtonText, { color: theme.colors.primary }]}>Try It</Text>
-          </GlassView>
-        </Pressable>
-      </Link>
-    </GlassView>
-  );
-
-  const renderHeaderRight = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol name="plus" color={theme.colors.primary} />
-    </Pressable>
-  );
-
-  const renderHeaderLeft = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol
-        name="gear"
-        color={theme.colors.primary}
-      />
-    </Pressable>
-  );
+  const horoscope = horoscopes[selectedSign];
+  const zodiacInfo = zodiacSigns.find(z => z.name === selectedSign);
 
   return (
     <>
-      {Platform.OS === 'ios' && (
-        <Stack.Screen
-          options={{
-            title: "Building the app...",
-            headerRight: renderHeaderRight,
-            headerLeft: renderHeaderLeft,
-          }}
-        />
-      )}
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <FlatList
-          data={modalDemos}
-          renderItem={renderModalDemo}
-          keyExtractor={(item) => item.route}
+      <Stack.Screen
+        options={{
+          title: 'Love Horoscope',
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.text,
+          headerShadowVisible: false,
+        }}
+      />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={[
-            styles.listContainer,
-            Platform.OS !== 'ios' && styles.listContainerWithTabBar
+            styles.contentContainer,
+            Platform.OS !== 'ios' && styles.contentContainerWithTabBar
           ]}
-          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-        />
+        >
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>✨ Daily Love Horoscope ✨</Text>
+            <Text style={styles.headerSubtitle}>Discover what the stars have in store for your love life</Text>
+          </View>
+
+          <View style={[commonStyles.card, styles.signCard]}>
+            <View style={styles.signHeader}>
+              <Text style={styles.signSymbol}>{zodiacInfo?.symbol}</Text>
+              <View style={styles.signInfo}>
+                <Text style={styles.signName}>{selectedSign}</Text>
+                <Text style={styles.signDate}>{zodiacInfo?.dateRange}</Text>
+                <View style={styles.elementBadge}>
+                  <Text style={styles.elementEmoji}>{zodiacInfo?.emoji}</Text>
+                  <Text style={styles.elementText}>{zodiacInfo?.element}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={[commonStyles.card, styles.horoscopeCard]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardIcon}>💕</Text>
+              <Text style={styles.cardTitle}>Love Forecast</Text>
+            </View>
+            <Text style={styles.horoscopeText}>{horoscope.love}</Text>
+          </View>
+
+          <View style={[commonStyles.card, styles.adviceCard]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardIcon}>💫</Text>
+              <Text style={styles.cardTitle}>Advice for Today</Text>
+            </View>
+            <Text style={styles.horoscopeText}>{horoscope.advice}</Text>
+          </View>
+
+          <Link href="/(tabs)/compatibility" asChild>
+            <Pressable style={styles.compatibilityButton}>
+              <Text style={styles.compatibilityIcon}>💑</Text>
+              <View style={styles.compatibilityTextContainer}>
+                <Text style={styles.compatibilityButtonTitle}>Check Compatibility</Text>
+                <Text style={styles.compatibilityButtonSubtitle}>Find your perfect match</Text>
+              </View>
+              <IconSymbol name="chevron.right" size={20} color={colors.textSecondary} />
+            </Pressable>
+          </Link>
+
+          <View style={styles.zodiacGrid}>
+            <Text style={styles.gridTitle}>Select Your Sign</Text>
+            <View style={styles.grid}>
+              {zodiacSigns.map((sign) => (
+                <Pressable
+                  key={sign.name}
+                  style={[
+                    styles.zodiacButton,
+                    selectedSign === sign.name && styles.zodiacButtonActive,
+                  ]}
+                  onPress={() => setSelectedSign(sign.name)}
+                >
+                  <Text style={styles.zodiacSymbol}>{sign.symbol}</Text>
+                  <Text style={[
+                    styles.zodiacName,
+                    selectedSign === sign.name && styles.zodiacNameActive,
+                  ]}>
+                    {sign.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </>
   );
@@ -107,55 +127,171 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor handled dynamically
   },
-  listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+  scrollView: {
+    flex: 1,
   },
-  listContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
-  },
-  demoCard: {
-    borderRadius: 12,
+  contentContainer: {
     padding: 16,
-    marginBottom: 12,
+    paddingBottom: 20,
+  },
+  contentContainerWithTabBar: {
+    paddingBottom: 100,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingTop: 8,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  signCard: {
+    marginBottom: 16,
+    backgroundColor: colors.secondary,
+  },
+  signHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  demoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+  signSymbol: {
+    fontSize: 64,
+    marginRight: 20,
   },
-  demoContent: {
+  signInfo: {
     flex: 1,
   },
-  demoTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  signName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.card,
     marginBottom: 4,
-    // color handled dynamically
   },
-  demoDescription: {
+  signDate: {
     fontSize: 14,
-    lineHeight: 18,
-    // color handled dynamically
+    color: colors.primary,
+    marginBottom: 8,
   },
-  headerButtonContainer: {
-    padding: 6,
+  elementBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
   },
-  tryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+  elementEmoji: {
+    fontSize: 16,
+    marginRight: 6,
   },
-  tryButtonText: {
+  elementText: {
     fontSize: 14,
     fontWeight: '600',
-    // color handled dynamically
+    color: colors.card,
+  },
+  horoscopeCard: {
+    marginBottom: 16,
+  },
+  adviceCard: {
+    marginBottom: 16,
+    backgroundColor: colors.accent,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  horoscopeText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.text,
+  },
+  compatibilityButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    boxShadow: '0px 4px 12px rgba(46, 41, 78, 0.1)',
+    elevation: 3,
+  },
+  compatibilityIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  compatibilityTextContainer: {
+    flex: 1,
+  },
+  compatibilityButtonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  compatibilityButtonSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  zodiacGrid: {
+    marginTop: 8,
+  },
+  gridTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  zodiacButton: {
+    width: '23%',
+    aspectRatio: 1,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    boxShadow: '0px 2px 8px rgba(46, 41, 78, 0.08)',
+    elevation: 2,
+  },
+  zodiacButtonActive: {
+    backgroundColor: colors.highlight,
+  },
+  zodiacSymbol: {
+    fontSize: 28,
+    marginBottom: 4,
+  },
+  zodiacName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  zodiacNameActive: {
+    color: colors.card,
   },
 });
